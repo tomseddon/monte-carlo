@@ -3,14 +3,78 @@ import json
 import random
 from decimal import Decimal
 from fractions import Fraction
-run_count = 1000
+run_count = 10000
 
 
 
 
-viewers = json.loads('{"1" : {"p" : 0.1, "hopping" : 0.25, "absconding" : 0.34}, "2" : {"p" : 0.9, "hopping" : 0.756, "absconding" : 0.9}}')
+viewers = json.loads("""{
+    "1": {
+        "p": 0.1,
+        "hopping": 0.25,
+        "absconding": 0.34
+    },
+    "2": {
+        "p": 0.1,
+        "hopping": 0.5,
+        "absconding": 0.3
+    },
+    "3": {
+        "p": 0.1,
+        "hopping": 0.5,
+        "absconding": 0.7
+    },
+    "4": {
+        "p": 0.1,
+        "hopping": 0.7,
+        "absconding": 0.3
+    },
+    "5": {
+        "p": 0.1,
+        "hopping": 0.3,
+        "absconding": 0.2
+    },
+    "6": {
+        "p": 0.1,
+        "hopping": 0.5,
+        "absconding": 0.6
+    },
+    "7": {
+        "p": 0.1,
+        "hopping": 0.4,
+        "absconding": 0.4
+    },
+    "8": {
+        "p": 0.1,
+        "hopping": 0.3,
+        "absconding": 0.4
+    },
+    "9": {
+        "p": 0.1,
+        "hopping": 0.3,
+        "absconding": 0.2
+    },
+    "10": {
+        "p": 0.1,
+        "hopping": 0.2,
+        "absconding": 0.2
+    }
+}""")
 
-ads = json.loads('{"A" : {"p" : 0.26, "glue" : 0.7},"B" : {"p" : 0.45, "glue" : 0.2},"C" : {"p" : 0.29, "glue" : 0.2} }')
+ads = json.loads("""{
+    "A": {
+        "p": 0.26,
+        "glue": 0.3
+    },
+    "B": {
+        "p": 0.45,
+        "glue": 0.2
+    },
+    "C": {
+        "p": 0.29,
+        "glue": 0.2
+    }
+}""")
 user_list = []
 ads_list = []
 abscond_check = []
@@ -49,7 +113,6 @@ while i < run_count:
         raise Exception('Ads list must have probabilities with same number of decimal places')
 
     #while i < run_count:
-    #TODO cycle through user and ad dicts, creating dynamic lists based on their probability of being picked
     rand_viewer = random.choice(user_list)
 
     # get properties for random viewer
