@@ -2,11 +2,12 @@ __author__ = 'tom'
 import json
 import random
 from decimal import Decimal
-import time
-from fractions import Fraction
-run_count = 1000
-ad_count = 10
-break_count = 4
+import numpy as np
+import matplotlib.pyplot as plt
+
+run_count = 10000
+ad_count = 3
+break_count = 5
 f = open("viewers.json")
 
 for line in f:
@@ -52,9 +53,10 @@ print p_list
 if p_list.count(p_list[0]) <> len(p_list):
 
     raise Exception('Ads list must have probabilities with same number of decimal places')
-ads_served = []
+ads_served_list = []
+ads_served_list2 = []
 while i < run_count:
-
+    ads_served = 0
     abscond_check = 'S'
     rand_viewer = random.choice(user_list)
 
@@ -99,7 +101,7 @@ while i < run_count:
         within_break_ad_count = 1
         while within_break_ad_count <= ad_count and abscond_check == 'S':
             rand_ad = random.choice(ads_list)
-            ads_served.append(ads[rand_ad]['type'])
+            ads_served_list.append(ads[rand_ad]['type'])
             print "         shown random " + str(ads[rand_ad]['type']) + " ad with glue factor of " + str(ads[rand_ad]['glue'])
             #apply ad glue factor to viewer's hopping propensity
             hop_p = h
@@ -118,14 +120,28 @@ while i < run_count:
                 if abscond_check == 'A':
                     print "                 viewer absconded after ad number " + str(within_break_ad_count)
                     abscond_out.append(abscond_check)
+                else:
+                    ads_served += 1
             else:
                 print "             viewer stayed"
                 abscond_check = 'S'
+                ads_served += 1
             within_break_ad_count += 1
         ad_break_count += 1
     if abscond_check == 'S':
         abscond_out.append(abscond_check)
     i += 1
+    ads_served_list2.append(ads_served)
 #print abscond_out
 print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_out.count('S'))
-print "ads served " + str(len(ads_served))
+#print "ads served " + str(len(ads_served_list))
+print ads_served_list2
+print str(sum(ads_served_list2)) + " of " + str(run_count * ad_count * break_count) + " ads seen"
+
+bins, edges = np.histogram(ads_served_list2, 50, normed=1)
+left,right = edges[:-1],edges[1:]
+X = np.array([left,right]).T.flatten()
+Y = np.array([bins,bins]).T.flatten()
+
+plt.plot(X,Y)
+plt.show()
