@@ -5,8 +5,8 @@ from decimal import Decimal
 import time
 from fractions import Fraction
 run_count = 1000
-ad_count = 5
-break_count = 3
+ad_count = 10
+break_count = 4
 f = open("viewers.json")
 
 for line in f:
@@ -29,8 +29,9 @@ for key,value in viewers.items():
     multiplier = '1'.ljust((-exp)+1,'0')
     whole_number_p = decimal_p * Decimal(multiplier)
     user_list += int(whole_number_p) * [key]
-    p_list.append(exp)
 
+    p_list.append(exp)
+#print user_list
 #sanity check
 if p_list.count(p_list[0]) <> len(p_list):
  #   print decimal_p
@@ -45,10 +46,13 @@ for key,value in ads.items():
     ads_list += int(whole_number_p) * [key]
     p_list.append(exp)
 
+print p_list
+
 #sanity check
 if p_list.count(p_list[0]) <> len(p_list):
-    raise Exception('Ads list must have probabilities with same number of decimal places')
 
+    raise Exception('Ads list must have probabilities with same number of decimal places')
+ads_served = []
 while i < run_count:
 
     abscond_check = 'S'
@@ -71,7 +75,7 @@ while i < run_count:
     rand_movie = random.choice(movie_list)
 
     movie_glue = Decimal(format(viewers[rand_viewer]['moviePreferences'][rand_movie]['glue'],".3g"))
-    print "Viewer " + str(rand_viewer) + " watching movie of " + rand_movie + " genre" + " with glue factor of " + format(movie_glue,".2g")
+    print "Viewer type " + str(rand_viewer) + " watching movie of " + rand_movie + " genre" + " with glue factor of " + format(movie_glue,".2g")
 
     abscond_p = a
     stay_p = Decimal(format(1 - abscond_p,".3g")) * movie_glue
@@ -95,7 +99,8 @@ while i < run_count:
         within_break_ad_count = 1
         while within_break_ad_count <= ad_count and abscond_check == 'S':
             rand_ad = random.choice(ads_list)
-            print "         shown random ad " + str(rand_ad)
+            ads_served.append(ads[rand_ad]['type'])
+            print "         shown random " + str(ads[rand_ad]['type']) + " ad with glue factor of " + str(ads[rand_ad]['glue'])
             #apply ad glue factor to viewer's hopping propensity
             hop_p = h
             glue = Decimal(format(ads[rand_ad]['glue'], ".3g"))
@@ -121,6 +126,6 @@ while i < run_count:
     if abscond_check == 'S':
         abscond_out.append(abscond_check)
     i += 1
-print abscond_out
+#print abscond_out
 print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_out.count('S'))
-
+print "ads served " + str(len(ads_served))
