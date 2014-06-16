@@ -1,113 +1,30 @@
-__author__ = 'tom'
-import json
-import random
+import random as ran
 from decimal import Decimal
-from fractions import Fraction
-run_count = 10
-ad_break_count = 3
-f = open("viewers.json")
 
-for line in f:
-    viewers = json.loads(line)
-f.close()
-f = open("ads.json")
-for line in f:
-    ads = json.loads(line)
-f.close()
+x = [0.016, 0.011, 0.018, 0.014, 0.011, 0.017, 0.018, 0.004, 0.004, 0.004, 0.003, 0.016, 0.016, 0.001, 0.003, 0.013, 0.011, 0.017, 0.003, 0.013, 0.005, 0.002, 0.007, 0.018, 0.009, 0.001, 0.015, 0.008, 0.015, 0.004, 0.008, 0.016, 0.013, 0.007, 0.003, 0.011, 0.015, 0.016, 0.019, 0.001, 0.015, 0.015, 0.019, 0.003, 0.007, 0.008, 0.002, 0.015, 0.006, 0.004, 0.017, 0.001, 0.009, 0.007, 0.017, 0.004, 0.009, 0.006, 0.012, 0.003, 0.018, 0.015, 0.018, 0.004, 0.015, 0.008, 0.019, 0.002, 0.008, 0.015, 0.006, 0.016, 0.008, 0.008, 0.006, 0.003, 0.013, 0.002, 0.011, 0.012, 0.018, 0.017, 0.013, 0.012, 0.016, 0.009, 0.005, 0.003, 0.013, 0.019, 0.001, 0.007, 0.006, 0.002, 0.013, 0.018, 0.011, 0.001, 0.009, 0.009, 0.003,0.003]
+y = ['automobile','toothpaste','smartphone','insurance','supermarket','sports drink','deodorant','hair product','makeup','airline','confectionery','computing','search engine','film','newspaper','toothbrush','clothing','handbag','television','toaster','refrigerator','tablet','gun','cigarette','alcoholic drink','headphone','banking','pen','book','fast food','train','utility company']
 
+ads = {}
+i=0
+j=1
+for item in x:
+    ad = {}
+    ad['p']=item
+    ad['type']=y[i]
+    ad['glue']=float(ran.randint(5,10)/Decimal(10))
+    ads[str(j)]=ad
+    if y[i]==y[-1]:
+        i = 0
+    else:
+        i += 1
+    j += 1
 
-user_list = []
-ads_list = []
-abscond_out = []
-i = 0
-while i < run_count:
-    p_list = []
-    for key,value in viewers.items():
-        decimal_p = Decimal(format(value['p'], ".2g"))
-        exp = decimal_p.as_tuple().exponent
-        multiplier = '1'.ljust((-exp)+1,'0')
-        whole_number_p = decimal_p * Decimal(multiplier)
-        #print "adding " + str(whole_number_p)  + " of type " + key + " viewers"
-        user_list += int(whole_number_p) * [key]
-        p_list.append(exp)
-    #print str(user_list.count('1')) + ":" + str(user_list.count('2'))
-    #sanity check
-    #print p_list
-    if p_list.count(p_list[0]) <> len(p_list):
-     #   print decimal_p
-        raise Exception('Viewer list must have probabilities with same number of decimal places')
+print len(ads)
+print
+i=0
+for key,value in ads.items():
+   # print value['p']
+    i += value['p']
+print i
 
-
-        #user_list += (Fraction(p)._numerator * [key])
-    p_list = []
-    for key,value in ads.items():
-        decimal_p = Decimal(format(value['p'], ".2g"))
-        exp = decimal_p.as_tuple().exponent
-        multiplier = '1'.ljust((-exp)+1,'0')
-        whole_number_p = decimal_p * Decimal(multiplier)
-        #print "adding " + str(whole_number_p)  + " of type " + key + " ads"
-        ads_list += int(whole_number_p) * [key]
-        p_list.append(exp)
-    #print str(ads_list.count('A')) + ":" + str(ads_list.count('B')) + ":" + str(ads_list.count('C'))
-    #sanity check
-    if p_list.count(p_list[0]) <> len(p_list):
-        raise Exception('Ads list must have probabilities with same number of decimal places')
-
-    break_count = 1
-    abscond_check = 'S'
-
-    rand_viewer = random.choice(user_list)
-    print "Viewer " + str(rand_viewer)
-    # get properties for random viewer
-    h = Decimal(format(viewers[rand_viewer]['hopping'], ".3g"))
-    a = Decimal(format(viewers[rand_viewer]['absconding'], ".3g"))
-    #print "random viewer " + rand_viewer + " picked with hopping propensity of " + str(h) + " (staying p of " + str(1-h) + "), and absconding p of " + str(a)
-    #get a random ad
-    while break_count <= ad_break_count and abscond_check == 'S':
-        rand_ad = random.choice(ads_list)
-        #apply ad glue factor to viewer's hopping propensity
-        glue = Decimal(format(ads[rand_ad]['glue'], ".3g"))
-        h = (1-h) * glue
-        #print "random ad " + rand_ad + " picked with glue factor of " + str(Decimal(format(ads[rand_ad]['glue'], ".3g")))
-        #print "new chance of staying is " + str(h)
-        exp = h.as_tuple().exponent
-        multiplier = '1'.ljust((-exp)+1,'0')
-
-        hoppers = int(int(multiplier) * (1-h))
-
-        stayers = int(int(multiplier) - hoppers)
-
-        hop_list = hoppers * ['H'] + stayers * ['S']
-        print " shown random ad " + str(rand_ad)
-        #print "hoppers " + str(hop_list.count('H')) + " stayers " + str(hop_list.count('S'))
-
-        hop_check = random.choice(hop_list)
-
-        if hop_check == 'H':
-            print "     viewer hopped"
-            abscond_p = a
-            exp = a.as_tuple().exponent
-            stay_p = 1 - a
-            multiplier = '1'.ljust((-exp)+1,'0')
-            #print stay_p
-            absconders = int(int(multiplier) * a)
-            stayers = int(int(multiplier) - absconders)
-            abscond_list =  absconders * ['A'] + stayers * ['S']
-
-            #print "absconders " + str(abscond_list.count('A')) + " stayers " + str(abscond_list.count('S'))
-            abscond_check = random.choice(abscond_list)
-            if abscond_check == 'A':
-                print "         viewer absconded after ad number " + str(break_count)
-                abscond_out.append(abscond_check)
-
-        else:
-            print "     viewer stayed"
-            abscond_check = 'S'
-        break_count +=1
-    if abscond_check == 'S':
-        abscond_out.append(abscond_check)
-    i += 1
-
-print abscond_out
-print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_out.count('S'))
-
+print ads
