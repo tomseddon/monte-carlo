@@ -5,7 +5,7 @@ from decimal import Decimal
 import numpy as np
 import matplotlib.pyplot as plt
 
-run_count = 10000
+run_count = 1
 ad_count = 3
 break_count = 5
 f = open("viewers.json")
@@ -47,7 +47,8 @@ for key,value in ads.items():
     ads_list += int(whole_number_p) * [key]
     p_list.append(exp)
 
-print p_list
+for key,value in ads.items():
+    print key,type(key)
 
 #sanity check
 if p_list.count(p_list[0]) <> len(p_list):
@@ -101,6 +102,8 @@ while i < run_count:
         within_break_ad_count = 1
         while within_break_ad_count <= ad_count and abscond_check == 'S':
             rand_ad = random.choice(ads_list)
+
+            print type(rand_ad)
             ads_served_list.append(ads[rand_ad]['type'])
             print "         shown random " + str(ads[rand_ad]['type']) + " ad with glue factor of " + str(ads[rand_ad]['glue'])
             #apply ad glue factor to viewer's hopping propensity
@@ -144,4 +147,4 @@ X = np.array([left,right]).T.flatten()
 Y = np.array([bins,bins]).T.flatten()
 
 plt.plot(X,Y)
-plt.show()
+#plt.show()
