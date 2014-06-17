@@ -1,13 +1,11 @@
-import numpy as np
+from mpl_toolkits.mplot3d import axes3d
 import matplotlib.pyplot as plt
+import numpy as np
 
-mu, sigma = 100, 15
-x = mu + sigma * np.random.randn(10000)
-print x
-bins, edges = np.histogram(x, 50, normed=1)
-left,right = edges[:-1],edges[1:]
-X = np.array([left,right]).T.flatten()
-Y = np.array([bins,bins]).T.flatten()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+X, Y, Z = axes3d.get_test_data(0.05)
+print X,Y,Z
+ax.plot_wireframe(X, Y, Z, rstride=10, cstride=10)
 
-plt.plot(X,Y)
-plt.show()
+#plt.show()
