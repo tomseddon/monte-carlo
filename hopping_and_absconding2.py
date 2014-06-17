@@ -160,7 +160,8 @@ while x <= ads_cnt:
         Z.append(x*y)
         y += 1
     x += 1
-print X,Y,Z
+A = np.array((X, Y, Z), dtype=float)
+
 
 fig = pl.figure()
 ax = fig.add_subplot(111, projection='3d')
