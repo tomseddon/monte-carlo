@@ -1,47 +1,88 @@
-import json
-from decimal import Decimal
+import numpy as np
+from matplotlib import pyplot as plt
+import pymc as pm
 
-def load_viewer_data():
-    f = open("viewers.json")
-    user_list = []
-    for line in f:
-        viewers = json.loads(line)
-    f.close()
-    p_list = []
-    for key,value in viewers.items():
-        decimal_p = Decimal(format(value['p'], ".2g"))
-        exp = decimal_p.as_tuple().exponent
-        multiplier = '1'.ljust((-exp)+1,'0')
-        whole_number_p = decimal_p * Decimal(multiplier)
-        user_list += int(whole_number_p) * [key]
-        p_list.append(exp)
-    if p_list.count(p_list[0]) <> len(p_list):
-        raise Exception('Viewer list must have probabilities with same number of decimal places')
-    return viewers,user_list
+three_five = [3, 0, 0, 6, 0, 2, 3, 3, 2, 0, 4, 1, 5, 0, 0, 0, 4, 2, 0, 1, 6, 6, 0, 6, 2, 4, 25, 0, 4, 1, 1, 1, 0, 4, 7, 5, 1, 2, 6, 2, 0, 1, 1, 1, 5, 0, 0, 3, 3, 2, 3, 0, 2, 2, 23, 4, 7, 0, 0, 0, 0, 5, 2, 2, 3, 0, 0, 8, 5, 0, 3, 2, 4, 1, 2, 1, 1, 1, 2, 0, 8, 0, 6, 0, 2, 2, 0, 1, 6, 8, 3, 2, 12, 2, 1, 0, 1, 0, 0, 1, 0, 2, 1, 1, 0, 0, 0, 4, 1, 3, 2, 9, 3, 1, 2, 1, 1, 0, 3, 2, 0, 3, 11, 0, 1, 3, 0, 4, 0, 9, 0, 16, 0, 1, 4, 0, 7, 0, 1, 6, 0, 1, 2, 0, 10, 5, 1, 1, 1, 7, 1, 0, 7, 3, 1, 1, 2, 0, 0, 0, 0, 0, 7, 1, 3, 5, 5, 4, 5, 1, 0, 23, 0, 2, 0, 0, 3, 3, 0, 2, 3, 16, 3, 22, 0, 0, 6, 2, 1, 0, 0, 7, 1, 0, 0, 12, 10, 0, 1, 0, 0, 3, 4, 1, 0, 1, 6, 1, 0, 10, 6, 3, 1, 11, 3, 3, 1, 2, 0, 2, 1, 5, 0, 3, 5, 1, 8, 0, 8, 1, 3, 1, 5, 9, 9, 0, 1, 3, 0, 6, 5, 7, 0, 6, 0, 0, 1, 0, 2, 1, 0, 1, 4, 9, 2, 1, 8, 15, 12, 9, 1, 1, 5, 1, 1, 0, 1, 5, 0, 0, 1, 2, 16, 1, 0, 5, 1, 6, 2, 0, 3, 4, 16, 0, 8, 4, 0, 6, 6, 0, 12, 12, 0, 0, 3, 1, 0, 3, 3, 0, 2, 0, 0, 0, 3, 0, 8, 1, 8, 3, 1, 1, 2, 1, 0, 9, 5, 1, 1, 2, 25, 15, 0, 0, 0, 2, 22, 2, 5, 10, 4, 18, 6, 0, 1, 4, 2, 1, 0, 1, 1, 10, 0, 0, 1, 4, 2, 2, 1, 0, 1, 1, 13, 2, 2, 0, 1, 3, 2, 1, 0, 2, 0, 1, 4, 1, 0, 3, 0, 3, 1, 1, 4, 8, 2, 2, 2, 8, 0, 2, 3, 1, 1, 5, 5, 8, 2, 0, 3, 11, 0, 7, 3, 0, 0, 1, 2, 0, 0, 10, 0, 3, 8, 0, 0, 5, 5, 5, 2, 0, 4, 24, 8, 0, 0, 3, 3, 1, 8, 1, 1, 3, 4, 6, 0, 12, 0, 6, 17, 0, 0, 1, 7, 18, 0, 1, 8, 0, 3, 0, 4, 1, 0, 0, 0, 5, 1, 0, 2, 2, 9, 10, 5, 4, 2, 2, 0, 2, 1, 0, 0, 0, 3, 0, 1, 2, 0, 9, 0, 0, 0, 1, 5, 0, 4, 0, 4, 0, 9, 2, 0, 0, 0, 7, 8, 0, 4, 8, 0, 0, 8, 3, 6, 0, 1, 1, 8, 0, 0, 6, 0, 1, 2, 0, 1, 2, 2, 8, 3, 4, 2, 7, 1, 4, 4, 4, 1, 3, 20, 1, 1, 3, 13, 2, 6, 4, 2, 0, 20, 3, 1, 2, 2, 0, 2, 2, 3, 1, 9, 2, 2, 5, 5, 0, 4, 1, 4, 0, 6, 0, 8, 11, 7, 0, 6, 0, 0, 6, 0, 2, 1, 7, 10, 0, 1, 0, 12, 16, 5, 1, 6, 2, 0, 0, 2, 1, 0, 5, 1, 4, 19, 2, 4, 8, 8, 17, 2, 6, 6, 0, 9, 2, 2, 6, 11, 0, 2, 1, 1, 0, 0, 5, 0, 6, 1, 0, 0, 2, 1, 0, 5, 1, 5, 2, 2, 2, 6, 0, 0, 8, 7, 0, 0, 0, 4, 0, 4, 6, 3, 1, 5, 2, 1, 1, 0, 0, 0, 5, 6, 0, 1, 2, 2, 4, 1, 0, 0, 2, 1, 1, 3, 3, 0, 2, 3, 5, 2, 3, 4, 1, 1, 1, 0, 1, 0, 4, 2, 0, 0, 1, 1, 0, 2, 3, 1, 1, 1, 1, 0, 1, 0, 1, 3, 0, 1, 11, 0, 2, 1, 0, 1, 0, 0, 3, 2, 0, 2, 6, 19, 9, 0, 3, 0, 1, 0, 1, 3, 0, 0, 5, 9, 4, 0, 0, 0, 1, 0, 2, 3, 2, 1, 4, 6, 14, 10, 0, 0, 0, 1, 16, 0, 0, 2, 7, 4, 0, 5, 12, 2, 5, 0, 1, 0, 1, 2, 1, 0, 2, 1, 0, 2, 0, 3, 0, 0, 1, 2, 0, 1, 10, 2, 0, 0, 2, 1, 4, 2, 3, 0, 2, 1, 1, 3, 4, 1, 2, 2, 5, 8, 1, 4, 5, 0, 1, 0, 0, 7, 0, 3, 3, 0, 5, 1, 1, 0, 2, 4, 0, 10, 0, 1, 1, 0, 6, 9, 1, 0, 3, 0, 2, 8, 0, 2, 14, 2, 1, 14, 5, 3, 0, 7, 0, 1, 3, 1, 1, 0, 0, 3, 12, 1, 0, 0, 2, 2, 13, 0, 0, 0, 2, 0, 1, 0, 0, 0, 3, 2, 6, 0, 3, 1, 6, 0, 0, 1, 0, 0, 1, 0, 0, 4, 0, 0, 4, 2, 0, 2, 9, 2, 1, 0, 3, 0, 1, 2, 0, 1, 0, 1, 0, 23, 3, 3, 0, 5, 0, 1, 2, 0, 7, 0, 1, 0, 0, 5, 8, 0, 0, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 1, 3, 1, 0, 0, 4, 0, 6, 12, 0, 0, 1, 2, 3, 2, 2, 6, 1, 4, 1, 7, 1, 6, 14, 0, 0, 1, 5, 12, 0, 4, 0, 4, 1, 10, 1, 4, 3, 3, 5, 3, 0, 0, 2, 1, 0, 7, 0, 0, 1, 1, 0, 6, 0, 1, 0, 5, 2, 0, 12, 2, 3, 9, 1, 1, 1, 2, 0, 0, 6, 2, 17, 0, 0, 3, 1, 5, 0, 5, 1, 0, 2, 12, 10, 12, 4, 14, 0, 0, 3, 2, 1]
+five_three = [3, 4, 4, 1, 0, 2, 4, 1, 4, 4, 2, 1, 1, 4, 0, 4, 1, 4, 1, 2, 0, 2, 3, 4, 4, 2, 1, 2, 0, 4, 1, 1, 1, 1, 0, 4, 3, 0, 4, 2, 4, 0, 3, 4, 1, 4, 0, 1, 0, 2, 4, 0, 4, 0, 1, 0, 0, 4, 2, 0, 3, 4, 3, 1, 2, 3, 2, 0, 1, 4, 2, 3, 2, 0, 0, 3, 4, 1, 1, 2, 4, 0, 0, 3, 4, 1, 0, 3, 4, 3, 2, 4, 3, 0, 2, 1, 0, 4, 0, 0, 0, 2, 0, 4, 0, 0, 4, 4, 1, 4, 1, 0, 2, 3, 1, 0, 0, 0, 0, 0, 0, 1, 2, 2, 0, 0, 0, 3, 2, 0, 4, 0, 0, 4, 0, 0, 1, 1, 0, 2, 0, 4, 4, 1, 0, 0, 0, 1, 4, 3, 3, 4, 0, 2, 4, 2, 2, 3, 4, 0, 0, 1, 4, 1, 4, 4, 1, 4, 0, 1, 4, 0, 0, 1, 1, 4, 2, 0, 3, 0, 1, 2, 1, 0, 1, 3, 1, 4, 4, 0, 2, 4, 1, 4, 3, 0, 1, 0, 4, 1, 4, 3, 1, 0, 0, 3, 4, 4, 1, 2, 1, 1, 0, 1, 2, 0, 2, 2, 0, 4, 1, 4, 4, 0, 4, 0, 0, 4, 1, 0, 4, 1, 0, 4, 4, 1, 4, 1, 2, 2, 3, 0, 1, 1, 2, 0, 2, 0, 0, 0, 4, 0, 1, 0, 4, 3, 0, 2, 1, 4, 3, 2, 1, 4, 0, 2, 2, 0, 1, 1, 0, 1, 0, 3, 4, 0, 1, 3, 2, 0, 1, 3, 2, 0, 1, 0, 1, 1, 1, 4, 4, 2, 3, 2, 1, 1, 0, 1, 2, 0, 4, 0, 4, 4, 3, 1, 4, 4, 3, 1, 1, 4, 2, 1, 0, 2, 4, 0, 1, 4, 3, 0, 0, 0, 0, 2, 2, 4, 0, 4, 2, 0, 1, 3, 0, 4, 4, 0, 3, 0, 1, 0, 3, 2, 3, 4, 1, 4, 0, 0, 4, 4, 0, 4, 0, 1, 4, 2, 4, 1, 1, 2, 2, 4, 4, 1, 0, 0, 3, 4, 1, 0, 0, 2, 4, 1, 1, 1, 4, 2, 3, 0, 0, 2, 3, 4, 3, 4, 2, 4, 0, 0, 4, 0, 4, 3, 2, 1, 4, 4, 0, 4, 0, 4, 2, 3, 4, 0, 4, 0, 3, 4, 0, 1, 0, 1, 1, 0, 0, 1, 0, 2, 3, 3, 4, 1, 1, 4, 1, 4, 0, 4, 4, 4, 0, 1, 2, 0, 0, 4, 0, 4, 1, 3, 0, 0, 4, 4, 4, 4, 1, 0, 1, 0, 0, 4, 1, 0, 1, 0, 2, 4, 4, 4, 0, 1, 3, 4, 0, 1, 2, 4, 1, 4, 2, 0, 2, 0, 2, 2, 4, 1, 4, 0, 4, 0, 4, 0, 3, 1, 0, 3, 4, 1, 4, 4, 4, 1, 4, 1, 4, 1, 3, 0, 4, 4, 4, 4, 0, 1, 0, 2, 2, 4, 2, 0, 4, 3, 2, 4, 0, 0, 0, 0, 4, 0, 4, 0, 2, 4, 2, 4, 4, 0, 3, 0, 4, 3, 4, 0, 3, 0, 1, 0, 0, 4, 4, 4, 0, 0, 0, 0, 1, 3, 0, 3, 4, 0, 3, 2, 1, 0, 0, 4, 1, 1, 1, 2, 4, 4, 0, 3, 4, 0, 0, 0, 4, 3, 2, 0, 1, 4, 2, 4, 4, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 1, 0, 3, 0, 0, 2, 0, 1, 2, 0, 1, 3, 1, 0, 1, 1, 0, 4, 2, 2, 1, 4, 3, 3, 4, 4, 4, 4, 0, 0, 1, 2, 1, 0, 0, 4, 3, 0, 4, 0, 4, 0, 0, 4, 1, 3, 4, 0, 2, 0, 4, 4, 0, 0, 1, 1, 0, 4, 3, 1, 4, 0, 4, 1, 4, 4, 4, 3, 2, 1, 1, 0, 1, 2, 3, 4, 4, 2, 2, 4, 1, 1, 4, 0, 0, 0, 4, 1, 3, 3, 0, 0, 4, 3, 2, 4, 1, 1, 1, 2, 0, 0, 1, 1, 2, 0, 1, 3, 1, 2, 1, 0, 1, 3, 1, 4, 4, 0, 0, 4, 2, 4, 2, 4, 4, 3, 4, 1, 3, 2, 0, 0, 4, 3, 2, 1, 1, 0, 0, 2, 4, 0, 0, 0, 2, 0, 4, 4, 1, 1, 2, 0, 4, 3, 3, 0, 0, 1, 4, 0, 0, 0, 4, 2, 4, 0, 2, 0, 1, 4, 4, 1, 1, 4, 3, 1, 3, 0, 0, 0, 4, 0, 4, 4, 0, 0, 1, 1, 0, 3, 0, 1, 1, 1, 4, 0, 0, 0, 0, 0, 3, 0, 0, 1, 0, 0, 4, 0, 1, 0, 4, 1, 4, 2, 0, 4, 3, 4, 4, 4, 0, 4, 1, 1, 4, 2, 0, 0, 1, 0, 4, 4, 4, 2, 0, 0, 4, 3, 0, 1, 3, 4, 2, 0, 0, 2, 4, 4, 0, 1, 0, 1, 1, 1, 0, 4, 3, 0, 4, 1, 3, 3, 1, 4, 1, 0, 0, 4, 3, 1, 1, 1, 0, 1, 3, 4, 4, 1, 0, 3, 0, 0, 2, 0, 4, 1, 0, 1, 4, 3, 0, 0, 1, 1, 1, 2, 0, 0, 4, 0, 0, 1, 4, 2, 0, 4, 0, 1, 4, 4, 0, 0, 3, 1, 0, 0, 2, 3, 4, 0, 3, 4, 0, 0, 0, 0, 0, 0, 3, 4, 4, 3, 1, 1, 1, 0, 4, 0, 0, 1, 1, 1, 4, 0, 0, 0, 3, 1, 3, 0, 2, 3, 0, 4, 3, 4, 4, 2, 0, 3, 0, 4, 0, 4, 0, 2, 4, 0, 3, 4, 4, 4, 3, 2, 1, 0, 3, 0, 4, 4, 2, 0, 4, 2, 0, 3, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4, 4, 2, 2, 0, 4, 4]
 
-#sanity check
-def load_ads_data():
-    f = open("ads.json")
-    for line in f:
-        ads = json.loads(line)
-    f.close()
+data = three_five + five_three
+count_data = np.array(data)
+three_five = three_five[three_five != 0]
+five_three = five_three[five_three != 0]
+#count_data = np.concatenate(three_five, five_three)
+#print three_five
+#count_data = np.loadtxt('/home/tom/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/Chapter1_Introduction/data/txtdata.csv')
+#count_data = np.loadtxt('/home/tom/test.txt')
+#print count_data
+n_count_data = len(count_data)
+plt.bar(np.arange(n_count_data), count_data, color="#348ABD")
+plt.xlabel("Time (days)")
+plt.ylabel("count of text-msgs received")
+plt.title("Did the viewers' ad viewing increase with the number of ads shown?")
+plt.xlim(0, n_count_data)
+#plt.show()
 
-    p_list = []
-    ads_list = []
-    for key,value in ads.items():
-        decimal_p = Decimal(format(value['p'], ".2g"))
-        exp = decimal_p.as_tuple().exponent
-        multiplier = '1'.ljust((-exp)+1,'0')
-        whole_number_p = decimal_p * Decimal(multiplier)
-        ads_list += int(whole_number_p) * [str(key)]
-        p_list.append(exp)
-    #sanity check
-    if p_list.count(p_list[0]) <> len(p_list):
-        raise Exception('Ads list must have probabilities with same number of decimal places')
-    return ads,ads_list
+alpha = 1.0 / count_data.mean()  # Recall count_data is the
+                               # variable that holds our txt counts
+print alpha
+lambda_1 = pm.Exponential("lambda_1", alpha)
+lambda_2 = pm.Exponential("lambda_2", alpha)
 
-viewers, user_list = load_viewer_data()
-print "user#","p","absconding","hopping","computing","deodorant"
-for key,value in viewers.items():
+tau = pm.DiscreteUniform("tau", lower=0, upper=n_count_data)
 
-    print key,value['p'],value['absconding'],value['hopping'],value['adPreferences']['computing']['glue'],value['adPreferences']['deodorant']['glue']#,value
+@pm.deterministic
+def lambda_(tau=tau, lambda_1=lambda_1, lambda_2=lambda_2):
+    out = np.zeros(n_count_data)
+    out[:tau] = lambda_1  # lambda before tau is lambda1
+    out[tau:] = lambda_2  # lambda after (and including) tau is lambda2
+    return out
+
+observation = pm.Poisson("obs", lambda_, value=count_data, observed=True)
+
+model = pm.Model([observation, lambda_1, lambda_2, tau])
+
+mcmc = pm.MCMC(model)
+mcmc.sample(40000, 10000, 1)
+
+lambda_1_samples = mcmc.trace('lambda_1')[:]
+lambda_2_samples = mcmc.trace('lambda_2')[:]
+tau_samples = mcmc.trace('tau')[:]
+
+print tau_samples
+# histogram of the samples:
+
+ax = plt.subplot(311)
+ax.set_autoscaley_on(False)
+
+plt.hist(lambda_1_samples, histtype='stepfilled', bins=30, alpha=0.85,
+         label="posterior of $\lambda_1$", color="#A60628", normed=True)
+plt.legend(loc="upper left")
+plt.title(r"""Posterior distributions of the variables
+    $\lambda_1,\;\lambda_2,\;\tau$""")
+plt.xlim([0, 6])
+plt.ylim([0, 7])
+plt.xlabel("$\lambda_1$ value")
+
+ax = plt.subplot(312)
+ax.set_autoscaley_on(False)
+plt.hist(lambda_2_samples, histtype='stepfilled', bins=30, alpha=0.85,
+         label="posterior of $\lambda_2$", color="#7A68A6", normed=True)
+plt.legend(loc="upper left")
+plt.xlim([0, 6])
+plt.ylim([0, 7])
+plt.xlabel("$\lambda_2$ value")
+
+plt.subplot(313)
+w = 1.0 / tau_samples.shape[0] * np.ones_like(tau_samples)
+plt.hist(tau_samples, bins=n_count_data, alpha=1,
+         label=r"posterior of $\tau$",
+         color="#467821", weights=w, rwidth=2.)
+plt.xticks(np.arange(n_count_data))
+
+plt.legend(loc="upper left")
+plt.ylim([0, .75])
+plt.xlim([len(count_data)/2 - 30, len(count_data)/2 + 30])
+plt.xlabel(r"$\tau$ (iterations)")
+plt.ylabel("probability");
+
+plt.show()
