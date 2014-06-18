@@ -171,7 +171,7 @@ print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_ou
 #print str(sum(ads_served_list2)) + " of " + str(run_count * ad_count * break_count) + " ads seen " + format(sum(ads_served_list2)/Decimal(run_count * ad_count * break_count)*100,".2g") + '%'
 
 #print ads_served_before_absconding_per_viewer
-
+print ads_served_list2
 #plt.show()
 c = 0
 ad_type_dict = {}
