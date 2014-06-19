@@ -6,7 +6,107 @@ import pylab as pl
 from mpl_toolkits.mplot3d import axes3d
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy as np
+from matplotlib import pyplot as plt,rcParams
+import pymc as pm
+import prettyplotlib as ppl
+rcParams['axes.linewidth'] = 0.1
 
+def group_hist(key,list1,bins):
+
+    data = list1
+    x = np.array(data)
+    hist, bins = np.histogram(x, bins=bins)
+    hist = hist/float(sum(hist))
+    width = 0.7 * (bins[1] - bins[0])
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, align='center', width=width,color='green',linewidth=0.1)
+    plt.xlabel('Number of ads seen', fontsize=8)
+    plt.ylabel('p', fontsize=8)
+    plt.tick_params(labelsize=8)
+    fig = plt.gcf()
+    fig.set_size_inches(7,4)
+    plt.grid(True)
+    plt.title('Viewer Group ' + str(key) + " Ad Impression Probability", fontsize=10)
+    plt.savefig('/home/tom/monte-carlo/' + str(key) + '.png', dpi=300, bbox_inches='tight')
+
+
+def compare_groups(list1,list2):
+
+    data = list1 + list2
+    count_data = np.array(data)
+    n_count_data = len(count_data)
+    plt.bar(np.arange(n_count_data), count_data, color="#348ABD")
+    plt.xlabel("Time (days)")
+    plt.ylabel("count of text-msgs received")
+    plt.title("Did the viewers' ad viewing increase with the number of ads shown?")
+    plt.xlim(0, n_count_data)
+    #plt.show()
+
+    alpha = 1.0 / count_data.mean()  # Recall count_data is the
+                                   # variable that holds our txt counts
+    print alpha
+    lambda_1 = pm.Exponential("lambda_1", alpha)
+    lambda_2 = pm.Exponential("lambda_2", alpha)
+
+    tau = pm.DiscreteUniform("tau", lower=0, upper=n_count_data)
+
+    @pm.deterministic
+    def lambda_(tau=tau, lambda_1=lambda_1, lambda_2=lambda_2):
+        out = np.zeros(n_count_data)
+        out[:tau] = lambda_1  # lambda before tau is lambda1
+        out[tau:] = lambda_2  # lambda after (and including) tau is lambda2
+        return out
+
+    observation = pm.Poisson("obs", lambda_, value=count_data, observed=True)
+
+    model = pm.Model([observation, lambda_1, lambda_2, tau])
+
+    mcmc = pm.MCMC(model)
+    mcmc.sample(40000, 10000, 1)
+
+    lambda_1_samples = mcmc.trace('lambda_1')[:]
+    lambda_2_samples = mcmc.trace('lambda_2')[:]
+    tau_samples = mcmc.trace('tau')[:]
+
+    print tau_samples
+    # histogram of the samples:
+
+    ax = plt.subplot(311)
+    ax.set_autoscaley_on(False)
+
+    plt.hist(lambda_1_samples, histtype='stepfilled', bins=30, alpha=0.85,
+             label="posterior of $\lambda_1$", color="#A60628", normed=True)
+    plt.legend(loc="upper left")
+    plt.title(r"""Posterior distributions of the variables
+        $\lambda_1,\;\lambda_2,\;\tau$""")
+    plt.xlim([0, 6])
+    plt.ylim([0, 7])
+    plt.xlabel("$\lambda_1$ value")
+
+    ax = plt.subplot(312)
+    ax.set_autoscaley_on(False)
+    plt.hist(lambda_2_samples, histtype='stepfilled', bins=30, alpha=0.85,
+             label="posterior of $\lambda_2$", color="#7A68A6", normed=True)
+    plt.legend(loc="upper left")
+    plt.xlim([0, 6])
+    plt.ylim([0, 7])
+    plt.xlabel("$\lambda_2$ value")
+
+    plt.subplot(313)
+    w = 1.0 / tau_samples.shape[0] * np.ones_like(tau_samples)
+    plt.hist(tau_samples, bins=n_count_data, alpha=1,
+             label=r"posterior of $\tau$",
+             color="#467821", weights=w, rwidth=2.)
+    plt.xticks(np.arange(n_count_data))
+
+    plt.legend(loc="upper left")
+    plt.ylim([0, .75])
+    plt.xlim([0,len(count_data)])
+    plt.xlabel(r"$\tau$ (iterations)")
+    plt.ylabel("probability");
+
+    plt.show()
 
 
 def load_viewer_data():
@@ -52,10 +152,9 @@ def load_ads_data():
 def run_simulation(viewers,user_list,ads,ads_list,run_count, ad_count, break_count,print_results=False):
     abscond_out = []
     ads_served_list = []
-    ads_served_list2 = []
     viewer_results = {}
     ads_served_before_absconding_per_viewer = {}
-    print run_count,ad_count,break_count
+
     i = 0
     while i < run_count:
         ads_served = 0
@@ -99,7 +198,7 @@ def run_simulation(viewers,user_list,ads,ads_list,run_count, ad_count, break_cou
             while within_break_ad_count <= ad_count and abscond_check == 'S':
                 rand_ad = random.choice(ads_list)
                 ad_type = ads[rand_ad]['type']
-                ads_served_list.append(ads[rand_ad]['type'])
+                #ads_served_list.append(ads[rand_ad]['type'])
                 if print_results:
                     print "         shown random " + str(ads[rand_ad]['type']) + " ad with glue factor of " + str(viewers[rand_viewer]['adPreferences'][ad_type]['glue'])
                 #apply ad glue factor to viewer's hopping propensity
@@ -122,37 +221,55 @@ def run_simulation(viewers,user_list,ads,ads_list,run_count, ad_count, break_cou
                         if print_results:
                             print "                 viewer absconded after ad number " + str(within_break_ad_count)
                         abscond_out.append(abscond_check)
+                        viewer_results[rand_viewer] += [0]
                     else:
                         ads_served += 1
-                        viewer_results[rand_viewer] += [ads[rand_ad]['type']]
+
                 else:
                     if print_results:
                         print "             viewer stayed"
                     abscond_check = 'S'
                     ads_served += 1
-                    viewer_results[rand_viewer] += [ads[rand_ad]['type']]
+                    #viewer_results[rand_viewer] += [1]
                 within_break_ad_count += 1
             ad_break_count += 1
         if abscond_check == 'S':
             abscond_out.append(abscond_check)
+            viewer_results[rand_viewer] += [1]
         i += 1
-        ads_served_list2.append(ads_served)
+        ads_served_list.append(ads_served)
         ads_served_before_absconding_per_viewer[rand_viewer] += [ads_served]
-    return abscond_out,ads_served_list,ads_served_list2,viewer_results,ads_served_before_absconding_per_viewer
 
-runs = 1000
-ads_cnt = 2
-breaks_cnt = 2
+    return abscond_out,ads_served_list,viewer_results,ads_served_before_absconding_per_viewer
+
 
 viewers,user_list = load_viewer_data()
 ads,ads_list = load_ads_data()
 
+ads_per_break = 5
+breaks_per_film = 10
+abscond_out,ads_served_list1,viewer_results,ads_served_before_absconding_per_viewer = run_simulation(viewers,user_list,
+                                                                                                                     ads,ads_list,
+                                                                                                                     1000,
+                                                                                                                     ads_per_break,
+                                                                                                                     breaks_per_film,False)
 
-abscond_out,ads_served_list,ads_served_list2,viewer_results,ads_served_before_absconding_per_viewer = run_simulation(viewers,user_list,
-                                                                                                                     ads,ads_list,runs,
-                                                                                                                     ads_cnt,
-                                                                                                                     breaks_cnt)
 
 
-print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_out.count('S')) + " ads served " + str(sum(ads_served_list2))
-print ads_served_list2
+print "absconders " + str(abscond_out.count('A')) + " stayers " + str(abscond_out.count('S')) + " ads served " + str(sum(ads_served_list1))
+#print ads_served_before_absconding_per_viewer
+#group_hist(ads_served_list1)
+"""
+for key,value in ads_served_before_absconding_per_viewer.items():
+    print key + ": " + str(sum(value)/Decimal(len(value)))
+    print max(value)
+    group_hist(key,value,ads_per_break*breaks_per_film)
+"""
+
+for key,value in viewer_results.items():
+    print key + " : " + str(sum(value))
+
+
+    # y <- glm (x ~ exp) exp = category
+    # family = "binomial")
+    #summary y
